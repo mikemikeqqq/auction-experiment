@@ -224,7 +224,7 @@
     <p>请您花费至少两分钟仔细预览该款汽车，倒计时结束后进入模拟竞拍环节。</p>
     <div id="previewArea"></div>
     <div class="code" id="uniqueCode"></div>
-    <p>请等待预览时间结束： <span id="countdownTimer">2</span> 秒</p>
+    <p>请等待预览时间结束： <span id="countdownTimer">60</span> 秒</p>
     <div class="button-group">
       <button id="nextButtonPage2" disabled>下一步</button>
     </div>
@@ -790,7 +790,7 @@
         }, 100);
       }
       
-      var countdown = 2;
+      var countdown = 60;
       var countdownElement = document.getElementById("countdownTimer");
       var nextButtonPage2 = document.getElementById("nextButtonPage2");
       nextButtonPage2.disabled = true;
