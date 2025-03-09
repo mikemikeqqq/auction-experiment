@@ -711,6 +711,19 @@
     
     /********** 页面2：VR vs. Non-VR预览 **********/
     (function(){
+      // 添加清除缓存的辅助函数
+      function clearCache() {
+        // 尝试清除浏览器缓存
+        if (window.caches) {
+          caches.keys().then(function(names) {
+            for (let name of names) caches.delete(name);
+          });
+        }
+      }
+      
+      // 页面加载时先尝试清除缓存
+      clearCache();
+      
       var group = (Math.random() < 0.5) ? "VR" : "NonVR";
       var randomNum = Math.floor(1000 + Math.random() * 9000);
       var uniqueCode = (group === "VR") ? "VR" + randomNum : "NOAR" + randomNum;
@@ -720,23 +733,61 @@
       
       var previewArea = document.getElementById("previewArea");
       if (group === "VR") {
+        // 添加时间戳防止缓存
+        var timestamp = new Date().getTime();
         previewArea.innerHTML = `
-          <div style="text-align: center;">
-            <h2>汽车 3D 预览</h2>
-            <p>点击下方按钮打开 3D 预览。该预览将在新标签页打开。</p>
-            <a href="https://www.faradayfuturecn.com/cn/3D-tour/" target="_blank" rel="noopener noreferrer">
-              <button style="padding: 10px 20px; font-size: 16px; cursor: pointer;">打开 3D 预览</button>
-            </a>
+          <div class="vr-container" style="width: 100%; max-width: 100%; margin: 0 auto;">
+            <h2 style="text-align: center;">VR全景预览</h2>
+            <div style="position: relative; padding-bottom: 75%; height: 0; overflow: hidden; max-width: 100%; background-color: #f2f2f2;">
+              <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; overflow: hidden;">
+                <iframe 
+                  src="https://m.dcdapp.com/motor/inapp/pano-new/inner.html?series_id=4960&t=${timestamp}" 
+                  id="vrIframe"
+                  style="position: absolute; top: calc(-1 * var(--vr-clip-top)); left: 0; width: 100%; height: calc(100% + var(--vr-clip-top)); border: none;" 
+                  allowfullscreen>
+                </iframe>
+              </div>
+            </div>
           </div>
         `;
+        
+        // 在iframe加载完成后调整位置以隐藏标题
+        setTimeout(function() {
+          var iframe = document.getElementById("vrIframe");
+          if (iframe) {
+            iframe.onload = function() {
+              // 确保iframe内容向上偏移，隐藏顶部的车辆名称
+              document.documentElement.style.setProperty('--vr-clip-top', '60px');
+              // 调整后更新iframe位置
+              this.style.top = 'calc(-1 * var(--vr-clip-top))';
+              this.style.height = 'calc(100% + var(--vr-clip-top))';
+              
+              // 备用方案：如果CSS变量不起作用，直接设置具体值
+              if (window.innerWidth < 768) {
+                // 移动设备需要更大的剪裁值
+                this.style.top = '-60px';
+                this.style.height = 'calc(100% + 60px)';
+              } else {
+                this.style.top = '-50px';
+                this.style.height = 'calc(100% + 50px)';
+              }
+            };
+          }
+        }, 100);
       } else {
         previewArea.innerHTML = `
           <div class="image-slider">
             <button class="arrow left" onclick="prevImage()">&#10094;</button>
-            <img id="sliderImage" src="https://i.postimg.cc/JzpskGN4/F6.jpg" alt="Image Preview">
+            <img id="sliderImage" src="https://i.postimg.cc/2jW56TbF/1.jpg" alt="Image Preview">
             <button class="arrow right" onclick="nextImage()">&#10095;</button>
           </div>
         `;
+        
+        // 确保图片预览正确加载
+        setTimeout(function() {
+          imageIndex = 0;
+          showImage(0);
+        }, 100);
       }
       
       var countdown = 2;
@@ -758,14 +809,22 @@
       showPage('page3');
     });
     
+    // 当页面2显示时，确保重置图片索引并显示第一张图片
+    document.addEventListener('pageshow', function() {
+      if (currentPage === 'page2') {
+        imageIndex = 0;
+        showImage(0);
+      }
+    });
+    
     var imageIndex = 0;
     var images = [
-      "https://i.postimg.cc/fTjtMHkd/F1.jpg",
-      "https://i.postimg.cc/L5F5pfpv/F2.jpg",
-      "https://i.postimg.cc/Bvytmk7r/F3.jpg",
-      "https://i.postimg.cc/9fzrtCbP/F4.jpg",
-      "https://i.postimg.cc/524HywFR/F5.jpg",
-      "https://i.postimg.cc/JzpskGN4/F6.jpg"
+      "https://i.postimg.cc/2jW56TbF/1.jpg",
+      "https://i.postimg.cc/wMDxGT8b/2.jpg",
+      "https://i.postimg.cc/CK6KZQsJ/3.jpg",
+      "https://i.postimg.cc/d001VYrL/4.jpg",
+      "https://i.postimg.cc/wvyjDQWz/5.jpg",
+      "https://i.postimg.cc/ydMYj35Z/6.jpg"
     ];
     function showImage(index) {
       var sliderImage = document.getElementById("sliderImage");
@@ -773,6 +832,12 @@
         sliderImage.src = images[index];
       }
     }
+    
+    // 确保页面加载时初始化第一张图片
+    window.addEventListener('DOMContentLoaded', function() {
+      showImage(0);
+    });
+    
     function prevImage() {
       if (imageIndex > 0) {
         imageIndex--;
@@ -785,7 +850,6 @@
         showImage(imageIndex);
       }
     }
-    
     /********** 页面3：模拟拍卖 **********/
     (function(){
       let currentBid = 135000;
