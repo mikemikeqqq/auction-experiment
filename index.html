@@ -176,7 +176,7 @@
       <strong>竞拍方式</strong>：本拍卖采用升价式拍卖，每次最低加价幅度为 5,000 MU，出价最长间隔为 30 秒。<br>
       <strong>竞拍结束条件</strong>：<br>
       - 无人再出价：如果所有竞标者都不愿继续加价，则拍卖立即结束。<br>
-      - 达到“立即购买”价格：如果竞价达到系统设定的“立即购买”价格，拍卖自动结束，当前最高出价者直接成交。<br>
+      - 达到"立即购买"价格：如果竞价达到系统设定的"立即购买"价格，拍卖自动结束，当前最高出价者直接成交。<br>
       最高出价者将获得该车辆一定期限的使用权，并按最终出价支付竞拍价格。
     </p>
     <p>
@@ -596,16 +596,28 @@
           <label><input type="radio" name="q20" value="7">7</label>
         </div>
       </div>
-      <div class="question">
-        <p>21. 请问您在拍卖前预览的车辆车身颜色是什么？</p>
+      <div class="question" id="q21">
+        <p>21. 请问您在拍卖前预览的车辆座椅颜色是什么？</p>
         <select name="q21" required>
           <option value="">请选择</option>
-          <option value="1. 白色和紫色">1. 白色和紫色</option>
-          <option value="2. 灰色和银色">2. 灰色和银色</option>
-          <option value="3. 红色和紫色">3. 红色和紫色</option>
-          <option value="4. 蓝色和白色">4. 蓝色和白色</option>
-          <option value="5. 紫色和红色">5. 紫色和红色</option>
+          <option value="1. 白色">1. 白色</option>
+          <option value="2. 黑色">2. 黑色</option>
+          <option value="3. 红色">3. 红色</option>
+          <option value="4. 蓝色">4. 蓝色</option>
+          <option value="5. 灰色">5. 灰色</option>
         </select>
+      </div>
+      <div class="question" id="q22">
+        <p>22. 请问您对预览中汽车品牌熟悉吗？（1=非常不熟悉 ~ 7=非常熟悉）</p>
+        <div class="likert-scale">
+            <label><input type="radio" name="q22" value="1" required>1</label>
+            <label><input type="radio" name="q22" value="2" required>2</label>
+            <label><input type="radio" name="q22" value="3" required>3</label>
+            <label><input type="radio" name="q22" value="4" required>4</label>
+            <label><input type="radio" name="q22" value="5" required>5</label>
+            <label><input type="radio" name="q22" value="6" required>6</label>
+            <label><input type="radio" name="q22" value="7" required>7</label>
+        </div>
       </div>
       <div class="button-group">
         <button type="submit">提交问卷</button>
@@ -654,6 +666,16 @@
     </div>
   </div>
   
+  <!-- ========== 页面11：实验完成页面 ========== -->
+  <div id="page11" class="container page">
+    <h1>实验完成</h1>
+    <div class="final-thank-you">
+      <h2>感谢您参与本次实验！</h2>
+      <p id="finalPaymentMsgPage11"></p>
+      <p>研究者将在审核数据后 7 个工作日内把相应的实验奖励支付到您提供的支付宝账号中。</p>
+    </div>
+  </div>
+  
   <script>
     /********** 全局变量及活动监测 **********/
     let participantId = "P" + Math.floor(1000 + Math.random() * 9000);
@@ -685,6 +707,11 @@
       document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
       document.getElementById(pageId).classList.add('active');
       enterPage(pageId);
+      
+      // 如果进入页面2，启动预览计时器
+      if (pageId === 'page2') {
+        startPreviewTimer();
+      }
     }
     window.addEventListener("beforeunload", function () {
       pageTimes[currentPage] = ((new Date() - startTime) / 1000).toFixed(1);
@@ -789,21 +816,12 @@
           showImage(0);
         }, 100);
       }
-      
-      var countdown = 60;
-      var countdownElement = document.getElementById("countdownTimer");
-      var nextButtonPage2 = document.getElementById("nextButtonPage2");
-      nextButtonPage2.disabled = true;
-      var timerInterval = setInterval(function(){
-        countdown--;
-        countdownElement.textContent = countdown;
-        if (countdown <= 0) {
-          clearInterval(timerInterval);
-          nextButtonPage2.disabled = false;
-          countdownElement.textContent = "0";
-        }
-      }, 1000);
     })();
+    
+    // 定义预览页面的全局变量和计时器
+    var previewCountdown = 60;
+    var previewTimerInterval;
+    var nextButtonPage2 = document.getElementById("nextButtonPage2");
     
     document.getElementById('nextButtonPage2').addEventListener('click', function(){
       showPage('page3');
@@ -1444,10 +1462,9 @@
           totalPayment = activityLog.lotteryBonus + auctionCashReward;
         }
         
-        // 显示最终感谢页面
-        document.getElementById("alipayConfirmArea").style.display = "none";
-        document.getElementById("finalThankYou").style.display = "block";
-        document.getElementById("finalPaymentMsg").textContent = `您的总收益为 ${totalPayment.toFixed(2)} 元，将支付到您的支付宝账号：${alipay}`;
+        // 跳转到最终感谢页面并显示信息
+        showPage('page11');
+        document.getElementById("finalPaymentMsgPage11").textContent = `您的总收益为 ${totalPayment.toFixed(2)} 元，将支付到您的支付宝账号：${alipay}`;
         
         console.log("完整活动日志：", activityLog);
       });
@@ -1460,6 +1477,30 @@
       
       loadRiskQuestion(0);
     })();
+    
+    // 启动预览计时器的函数
+    function startPreviewTimer() {
+      // 重置计时器状态
+      previewCountdown = 60;
+      if (previewTimerInterval) {
+        clearInterval(previewTimerInterval);
+      }
+      
+      var countdownElement = document.getElementById("countdownTimer");
+      countdownElement.textContent = previewCountdown;
+      nextButtonPage2.disabled = true;
+      
+      // 启动新的计时器
+      previewTimerInterval = setInterval(function(){
+        previewCountdown--;
+        countdownElement.textContent = previewCountdown;
+        if (previewCountdown <= 0) {
+          clearInterval(previewTimerInterval);
+          nextButtonPage2.disabled = false;
+          countdownElement.textContent = "0";
+        }
+      }, 1000);
+    }
   </script>
 </body>
 </html>
