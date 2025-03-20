@@ -1707,35 +1707,94 @@
     try {
       console.log('准备提交数据到Supabase:', participantData);
       
-      const response = await fetch(`${SUPABASE_URL}/rest/v1/participants`, {
+      // 创建简化的数据结构
+      // 注意：表名可能是"Participants"而不是"participants"，Supabase表名区分大小写
+      const simplifiedData = {
+        id: participantData.id || crypto.randomUUID(),
+        user_id: participantData.participant_id || localStorage.getItem('userId'),
+        action_type: participantData.action_type || 'data_submission',
+        data: JSON.stringify(participantData),
+        created_at: new Date().toISOString()
+      };
+      
+      console.log('简化后的数据:', simplifiedData);
+      
+      // 尝试提交到"user_logs"表 - 这是一个更简单的结构
+      const response = await fetch(`${SUPABASE_URL}/rest/v1/user_logs`, {
         method: 'POST',
         headers: {
           'apikey': SUPABASE_KEY,
           'Authorization': `Bearer ${SUPABASE_KEY}`,
           'Content-Type': 'application/json',
-          'Prefer': 'return=representation'
+          'Prefer': 'return=minimal'
         },
-        body: JSON.stringify(participantData)
+        body: JSON.stringify(simplifiedData)
       });
       
       console.log('Supabase响应状态:', response.status);
       
       if (response.ok) {
-        const responseData = await response.json();
-        console.log('✅ 数据已成功提交到Supabase:', responseData);
-        alert('✅ 数据已成功提交到Supabase！');
+        console.log('✅ 数据已成功提交到Supabase');
         return true;
       } else {
         const errorText = await response.text();
         console.error('❌ Supabase数据提交失败:', errorText);
-        alert('⚠️ 数据提交失败，请稍后重试。');
-        localStorage.setItem('auction_experiment_data_backup', JSON.stringify(participantData));
-        return false;
+        
+        // 如果是表不存在错误，尝试使用正确的表名或创建表
+        if (errorText.includes('relation') && errorText.includes('does not exist')) {
+          console.log('正在尝试备用方案...');
+          return await submitToBackupTable(participantData);
+        } else {
+          alert('⚠️ 数据提交失败，已保存到本地');
+          localStorage.setItem('experiment_data_backup', JSON.stringify(participantData));
+          return false;
+        }
       }
     } catch (error) {
       console.error('❌ 提交数据时出现异常:', error);
-      localStorage.setItem('auction_experiment_data_backup', JSON.stringify(participantData));
+      localStorage.setItem('experiment_data_backup', JSON.stringify(participantData));
       alert('⚠️ 提交数据时出现错误，数据已在本地备份！');
+      return false;
+    }
+  }
+  
+  // 尝试提交到备用表
+  async function submitToBackupTable(participantData) {
+    try {
+      // 尝试不同的表名和不同的格式
+      const tables = ['user_actions', 'logs', 'events', 'Participants', 'PARTICIPANTS', 'participants'];
+      
+      for (const table of tables) {
+        console.log(`尝试提交到表: ${table}`);
+        
+        const response = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
+          method: 'POST',
+          headers: {
+            'apikey': SUPABASE_KEY,
+            'Authorization': `Bearer ${SUPABASE_KEY}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=minimal'
+          },
+          body: JSON.stringify({
+            id: crypto.randomUUID(),
+            data: JSON.stringify(participantData),
+            created_at: new Date().toISOString()
+          })
+        });
+        
+        if (response.ok) {
+          console.log(`✅ 数据已成功提交到表: ${table}`);
+          alert(`✅ 数据已成功提交到Supabase表: ${table}`);
+          return true;
+        }
+      }
+      
+      console.log('所有备用表尝试失败，保存到本地');
+      localStorage.setItem('experiment_data_backup', JSON.stringify(participantData));
+      alert('⚠️ 无法找到有效的表，数据已保存到本地');
+      return false;
+    } catch (error) {
+      console.error('❌ 备用提交失败:', error);
       return false;
     }
   }
@@ -1746,11 +1805,11 @@
       const userId = localStorage.getItem('userId');
       const group = localStorage.getItem('group') || '未分组';
       
-      // 构建简化的数据结构
+      // 构建更简单的数据结构
       const userData = {
-        participant_id: userId,
+        id: crypto.randomUUID(),
+        user_id: userId,
         group: group,
-        unique_code: userId + '_' + new Date().toISOString(),
         action_type: actionType,
         action_data: JSON.stringify(actionData),
         timestamp: new Date().toISOString()
@@ -1758,6 +1817,12 @@
       
       console.log('记录用户行为:', actionType, actionData);
       
+      // 先保存到本地，确保数据不会丢失
+      const localLogs = JSON.parse(localStorage.getItem('user_action_logs') || '[]');
+      localLogs.push(userData);
+      localStorage.setItem('user_action_logs', JSON.stringify(localLogs));
+      
+      // 然后尝试发送到服务器
       return await submitDataToSupabase(userData);
     } catch (error) {
       console.error('记录用户行为失败:', error);
@@ -1768,9 +1833,8 @@
   // 测试Supabase连接
   async function testSupabaseConnection() {
     const testData = {
-      participant_id: localStorage.getItem('userId') || 'test_user',
-      group: 'test_group',
-      unique_code: 'test_' + Date.now(),
+      id: crypto.randomUUID(),
+      user_id: localStorage.getItem('userId') || 'test_user',
       action_type: 'connection_test',
       action_data: JSON.stringify({ test: true, time: new Date().toISOString() }),
       timestamp: new Date().toISOString()
@@ -1779,20 +1843,73 @@
     console.log('正在测试Supabase连接...');
     
     try {
+      // 检查Supabase项目是否能访问
+      const projectResponse = await fetch(`${SUPABASE_URL}/rest/v1/`, {
+        method: 'GET',
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`
+        }
+      });
+      
+      console.log('Supabase项目访问状态:', projectResponse.status);
+      
+      if (!projectResponse.ok) {
+        alert('❌ Supabase项目访问失败! 这可能是API密钥错误或项目不存在');
+        return false;
+      }
+      
+      // 获取可用的表
+      const tablesResponse = await fetch(`${SUPABASE_URL}/rest/v1/?select=tables`, {
+        method: 'GET',
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`
+        }
+      });
+      
+      // 尝试读取表信息
+      if (tablesResponse.ok) {
+        const tables = await tablesResponse.json();
+        console.log('可用的表:', tables);
+      }
+      
+      // 尝试提交测试数据
       const result = await submitDataToSupabase(testData);
       if (result) {
         alert('✅ Supabase连接测试成功！');
       } else {
-        alert('❌ Supabase连接测试失败，请检查网络和控制台错误！');
+        alert('❌ Supabase数据提交测试失败，请查看控制台错误信息');
       }
+      
+      return result;
     } catch (error) {
       console.error('测试连接时出错:', error);
       alert('❌ 测试出错: ' + error.message);
+      return false;
     }
   }
   
   // 在页面加载后测试连接
-  setTimeout(testSupabaseConnection, 2000);
+  setTimeout(function() {
+    console.log('开始Supabase连接测试...');
+    testSupabaseConnection();
+  }, 2000);
+  
+  // 设置轮询，尝试上传本地存储的日志
+  setInterval(function() {
+    const localLogs = JSON.parse(localStorage.getItem('user_action_logs') || '[]');
+    if (localLogs.length > 0) {
+      console.log(`尝试上传${localLogs.length}条本地日志...`);
+      submitDataToSupabase(localLogs[0]).then(success => {
+        if (success) {
+          console.log('成功上传一条本地日志');
+          localLogs.shift();
+          localStorage.setItem('user_action_logs', JSON.stringify(localLogs));
+        }
+      });
+    }
+  }, 30000); // 每30秒尝试一次
   
   // 在确认支付宝时提交完整数据
   const confirmAlipayBtn = document.getElementById('confirmAlipay');
@@ -1812,38 +1929,44 @@
         totalPayment = activityLog.lotteryBonus + auctionCashReward;
       }
       
+      // 简化的数据结构
       const participantData = {
-        participant_id: localStorage.getItem('userId'),
+        id: crypto.randomUUID(),
+        user_id: localStorage.getItem('userId'),
+        action_type: 'experiment_complete',
         group: localStorage.getItem('group') || '',
         unique_code: localStorage.getItem('uniqueCode') || '',
-        page_times: JSON.stringify(pageTimes || {}),
-        bid_history: JSON.stringify({
-          simulation: activityLog.bidHistorySim || [],
-          formal: activityLog.bidHistoryFormal || []
-        }),
-        survey_responses: JSON.stringify(activityLog.surveyResponses || {}),
-        risk_responses: JSON.stringify(activityLog.riskResponses || {}),
-        immediate_purchase: !!activityLog.immediatePurchase,
-        final_winner: !!activityLog.finalWinner,
-        auction_profit: activityLog.auctionProfit || 0,
-        lottery_bonus: activityLog.lotteryBonus || 0,
         alipay: alipay,
-        total_payment: totalPayment
+        total_payment: totalPayment,
+        experiment_data: JSON.stringify({
+          page_times: pageTimes || {},
+          bid_history: {
+            simulation: activityLog.bidHistorySim || [],
+            formal: activityLog.bidHistoryFormal || []
+          },
+          survey_responses: activityLog.surveyResponses || {},
+          risk_responses: activityLog.riskResponses || {},
+          immediate_purchase: !!activityLog.immediatePurchase,
+          final_winner: !!activityLog.finalWinner,
+          auction_profit: activityLog.auctionProfit || 0,
+          lottery_bonus: activityLog.lotteryBonus || 0
+        }),
+        timestamp: new Date().toISOString()
       };
       
-      await submitDataToSupabase(participantData);
+      const success = await submitDataToSupabase(participantData);
+      
+      if (success) {
+        alert('✅ 实验数据已成功提交到Supabase！');
+      } else {
+        alert('⚠️ 数据提交到Supabase失败，已保存到本地备份');
+      }
       
       showPage('page11');
       document.getElementById("finalPaymentMsgPage11").textContent = 
         `您的总收益为 ${totalPayment.toFixed(2)} 元，将支付到您的支付宝账号：${alipay}`;
       
       console.log("📌 提交数据完成：", participantData);
-      
-      // 同时记录这个行为
-      logUserAction('experiment_complete', { 
-        alipay: alipay,
-        total_payment: totalPayment
-      });
     });
   }
   
@@ -1861,16 +1984,32 @@
   const testButton = document.createElement('button');
   testButton.textContent = '测试Supabase';
   testButton.onclick = testSupabaseConnection;
+  testButton.style.marginBottom = '5px';
+  testButton.style.display = 'block';
+  testButton.style.width = '100%';
   
   const sendTestButton = document.createElement('button');
   sendTestButton.textContent = '发送测试数据';
   sendTestButton.onclick = function() {
     logUserAction('manual_test', { time: new Date().toISOString() });
   };
+  sendTestButton.style.marginBottom = '5px';
+  sendTestButton.style.display = 'block';
+  sendTestButton.style.width = '100%';
+  
+  const viewLogsButton = document.createElement('button');
+  viewLogsButton.textContent = '查看本地日志';
+  viewLogsButton.onclick = function() {
+    const logs = JSON.parse(localStorage.getItem('user_action_logs') || '[]');
+    console.log('本地存储的日志:', logs);
+    alert(`本地有${logs.length}条未同步的日志记录`);
+  };
+  viewLogsButton.style.display = 'block';
+  viewLogsButton.style.width = '100%';
   
   debugDiv.appendChild(testButton);
-  debugDiv.appendChild(document.createElement('br'));
   debugDiv.appendChild(sendTestButton);
+  debugDiv.appendChild(viewLogsButton);
   document.body.appendChild(debugDiv);
   
   // 页面加载时记录
