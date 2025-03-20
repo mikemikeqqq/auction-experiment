@@ -1574,7 +1574,7 @@
         alert("支付宝账号不能为空，请输入您的支付宝账号。");
         return;
       }
-      
+     
       // 显示确认区域
       document.getElementById("displayAlipay").textContent = alipay;
       document.getElementById("alipayInputArea").style.display = "none";
@@ -1582,29 +1582,77 @@
     });
     
     // 确认支付宝账号正确
-    document.getElementById("confirmAlipay").addEventListener("click", function(){
+    document.getElementById("confirmAlipay").addEventListener("click", async function(){
       const alipay = document.getElementById("displayAlipay").textContent;
       activityLog.alipay = alipay;
       
       // 计算总收益用于显示
       let totalPayment = 0;
       if (activityLog.finalWinner) {
-        totalPayment = activityLog.lotteryBonus + 50;
+          totalPayment = activityLog.lotteryBonus + 50;
       } else {
-        let auctionCashReward = 0;
-        if (activityLog.auctionProfit !== 0) {
-          auctionCashReward = (activityLog.auctionProfit / 10000 * 5);
-        }
-        totalPayment = activityLog.lotteryBonus + auctionCashReward;
+          let auctionCashReward = 0;
+          if (activityLog.auctionProfit !== 0) {
+              auctionCashReward = (activityLog.auctionProfit / 10000 * 5);
+          }
+          totalPayment = activityLog.lotteryBonus + auctionCashReward;
       }
       
-      // 跳转到最终感谢页面并显示信息
-      showPage('page11');
-      document.getElementById("finalPaymentMsgPage11").textContent = `您的总收益为 ${totalPayment.toFixed(2)} 元，将支付到您的支付宝账号：${alipay}`;
-      
-      console.log("完整活动日志：", activityLog);
-    });
-    
+      // 准备要发送的数据
+      const participantData = {
+         participantId: participantId,
+          group: localStorage.getItem('group'),
+          uniqueCode: localStorage.getItem('uniqueCode'),
+          pageTimes: pageTimes,
+         bidHistory: {
+              simulation: activityLog.bidHistorySim,
+              formal: activityLog.bidHistoryFormal
+         },
+          surveyResponses: activityLog.surveyResponses,
+          riskResponses: activityLog.riskResponses,
+          immediatePurchase: activityLog.immediatePurchase,
+          finalWinner: activityLog.finalWinner,
+          auctionProfit: activityLog.auctionProfit,
+          lotteryBonus: activityLog.lotteryBonus,
+         alipay: alipay
+       };
+       
+      try {
+          // 发送数据到服务器 - 修改为Vercel部署的地址
+          const response = await fetch('https://auction-experiment.vercel.app/api/participants', {
+              method: 'POST',
+             headers: {
+                      'Content-Type': 'application/json'
+             },
+              body: JSON.stringify(participantData)
+          });
+  
+          if (!response.ok) {
+              throw new Error('数据保存失败');
+          }
+  
+          // 跳转到最终感谢页面并显示信息
+          showPage('page11');
+          document.getElementById("finalPaymentMsgPage11").textContent = `您的总收益为 ${totalPayment.toFixed(2)} 元，将支付到您的支付宝账号：${alipay}`;
+          
+          console.log("完整活动日志：", activityLog);
+      } catch (error) {
+          console.error('保存数据时出错：', error);
+          alert('保存数据时出现错误，但不会影响您的实验参与。');
+          // 即使保存失败也继续显示结果页面
+          showPage('page11');
+          document.getElementById("finalPaymentMsgPage11").textContent = `您的总收益为 ${totalPayment.toFixed(2)} 元，将支付到您的支付宝账号：${alipay}`;
+          
+          // 保存到本地存储作为备份
+          try {
+            localStorage.setItem('auction_experiment_data_backup', JSON.stringify(participantData));
+            console.log('数据已备份到本地存储');
+          } catch (storageError) {
+            console.error('备份到本地存储失败:', storageError);
+          }
+      }
+     });
+     
     // 重新编辑支付宝账号
     document.getElementById("editAlipay").addEventListener("click", function(){
       document.getElementById("alipayConfirmArea").style.display = "none";
