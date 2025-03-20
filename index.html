@@ -1692,94 +1692,120 @@
       document.getElementById(`${contentId}_img`).src = images[miniImageIndexes[contentId]];
     }
   }
+
+  // ===== Supabase数据记录功能 =====
+  // 在页面底部添加简单的Supabase数据记录功能
+  const SUPABASE_URL = 'https://bhsvdkdslhvoqbzofqve.supabase.co';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJoc3Zka2RzbGh2b3Fiem9mcXZlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI1MTA0NDcsImV4cCI6MjA1ODA4NjQ0N30.Qsi7rEk4k1cU-Atu108OwUfenJLJ78B2jV2pGa5eDyQ';
+  
+  // 创建唯一的用户ID和会话ID
+  if (!localStorage.getItem('userId')) {
+    localStorage.setItem('userId', 'user_' + Date.now().toString(36) + Math.random().toString(36).substring(2));
+  }
+  
+  // 记录用户行为的函数
+  function logUserAction(actionType, actionData = {}) {
+    const userId = localStorage.getItem('userId');
+    const group = localStorage.getItem('group') || '未分组';
+    
+    const userData = {
+      participant_id: userId,
+      group: group,
+      unique_code: actionType + '_' + Date.now(),
+      page_times: activityLog.pageTimes || {},
+      bid_history: Array.isArray(activityLog.bidHistoryFormal) ? activityLog.bidHistoryFormal.map(bid => ({
+        amount: bid,
+        timestamp: new Date().toISOString()
+      })) : [],
+      immediate_purchase: !!activityLog.immediatePurchase,
+      final_winner: !!activityLog.finalWinner,
+      auction_profit: activityLog.auctionProfit || 0,
+      lottery_bonus: activityLog.lotteryBonus || 0,
+      alipay: activityLog.alipay || '',
+      // 添加当前动作信息
+      action_type: actionType,
+      action_data: actionData
+    };
+    
+    // 发送到Supabase
+    fetch(`${SUPABASE_URL}/rest/v1/participants`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'resolution=merge-duplicates,return=representation'
+      },
+      body: JSON.stringify(userData)
+    })
+    .then(response => {
+      if (response.ok) {
+        console.log('用户行为数据已记录到Supabase');
+      } else {
+        console.error('Supabase数据记录失败');
+      }
+    })
+    .catch(error => {
+      console.error('Supabase连接错误:', error);
+    });
+  }
+
+  // 修改原有函数，增加行为记录
+  const originalShowPage = showPage;
+  showPage = function(pageId) {
+    // 调用原始函数
+    originalShowPage(pageId);
+    // 记录页面访问
+    logUserAction('page_view', { pageId: pageId });
+  };
+  
+  // 修改VR预览记录
+  const originalInitializePreviewPanel = initializePreviewPanel;
+  initializePreviewPanel = function(pageId) {
+    // 调用原始函数
+    originalInitializePreviewPanel(pageId);
+    // 记录预览类型
+    const previewType = localStorage.getItem('group') || '图片';
+    logUserAction('preview', { type: previewType, pageId: pageId });
+  };
+  
+  // 记录图片查看
+  const originalPrevImageMini = prevImageMini;
+  prevImageMini = function(contentId) {
+    // 调用原始函数
+    originalPrevImageMini(contentId);
+    // 记录图片查看
+    if (miniImageIndexes[contentId] !== undefined) {
+      logUserAction('image_view', { 
+        imageIndex: miniImageIndexes[contentId],
+        contentId: contentId
+      });
+    }
+  };
+  
+  const originalNextImageMini = nextImageMini;
+  nextImageMini = function(contentId) {
+    // 调用原始函数
+    originalNextImageMini(contentId);
+    // 记录图片查看
+    if (miniImageIndexes[contentId] !== undefined) {
+      logUserAction('image_view', { 
+        imageIndex: miniImageIndexes[contentId],
+        contentId: contentId
+      });
+    }
+  };
+  
+  // 出价记录
+  document.getElementById('placeBidButton')?.addEventListener('click', function() {
+    const bidInput = document.getElementById('bidAmount');
+    if (bidInput && !isNaN(parseFloat(bidInput.value))) {
+      logUserAction('bid', { amount: parseFloat(bidInput.value) });
+    }
+  });
+  
+  // 初始化页面时记录一次
+  logUserAction('page_load', { url: window.location.href });
 </script>
 </body>
 </html>
-
-```javascript
-// 完整的Supabase数据提交函数
-async function submitDataToSupabase(participantData) {
-    const supabaseUrl = 'https://bhsvdkdslhvoqbzofqve.supabase.co';
-    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJoc3Zka2RzbGh2b3Fiem9mcXZlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI1MTA0NDcsImV4cCI6MjA1ODA4NjQ0N30.Qsi7rEk4k1cU-Atu108OwUfenJLJ78B2jV2pGa5eDyQ';
-
-    try {
-        const response = await fetch(`${supabaseUrl}/rest/v1/participants`, {
-            method: 'POST',
-            headers: {
-                'apikey': supabaseKey,
-                'Authorization': `Bearer ${supabaseKey}`,
-                'Content-Type': 'application/json',
-                'Prefer': 'return=representation'
-            },
-            body: JSON.stringify({
-                participant_id: participantData.participantId,
-                group: participantData.group,
-                unique_code: participantData.uniqueCode,
-                page_times: participantData.pageTimes,
-                bid_history: participantData.bidHistory,
-                survey_responses: participantData.surveyResponses,
-                risk_responses: participantData.riskResponses,
-                immediate_purchase: participantData.immediatePurchase,
-                final_winner: participantData.finalWinner,
-                auction_profit: participantData.auctionProfit,
-                lottery_bonus: participantData.lotteryBonus,
-                alipay: participantData.alipay
-            })
-        });
-
-        if (response.ok) {
-            alert('数据已成功提交到Supabase！');
-        } else {
-            alert('数据提交失败，请稍后重试。');
-            console.error(await response.text());
-            localStorage.setItem('auction_experiment_data_backup', JSON.stringify(participantData));
-        }
-    } catch (error) {
-        console.error('提交数据时出现异常：', error);
-        localStorage.setItem('auction_experiment_data_backup', JSON.stringify(participantData));
-        alert('提交数据时出现错误，已在本地备份数据。');
-    }
-}
-
-// 在你现有的“confirmAlipay”按钮事件处理代码里调用上述函数：
-document.getElementById("confirmAlipay").addEventListener("click", async function(){
-  const alipay = document.getElementById("displayAlipay").textContent;
-  activityLog.alipay = alipay;
-
-  let totalPayment = 0;
-  if (activityLog.finalWinner) {
-      totalPayment = activityLog.lotteryBonus + 50;
-  } else {
-      let auctionCashReward = 0;
-      if (activityLog.auctionProfit !== 0) {
-          auctionCashReward = (activityLog.auctionProfit / 10000 * 5);
-      }
-      totalPayment = activityLog.lotteryBonus + auctionCashReward;
-  }
-
-  const participantData = {
-    participantId: participantId,
-    group: localStorage.getItem('group'),
-    uniqueCode: localStorage.getItem('uniqueCode'),
-    pageTimes: pageTimes,
-    bidHistory: {
-      simulation: activityLog.bidHistorySim,
-      formal: activityLog.bidHistoryFormal
-    },
-    surveyResponses: activityLog.surveyResponses,
-    riskResponses: activityLog.riskResponses,
-    immediatePurchase: activityLog.immediatePurchase,
-    finalWinner: activityLog.finalWinner,
-    auctionProfit: activityLog.auctionProfit,
-    lotteryBonus: activityLog.lotteryBonus,
-    alipay: alipay
-  };
-
-  await submitDataToSupabase(participantData);
-
-  showPage('page11');
-  document.getElementById("finalPaymentMsgPage11").textContent = `您的总收益为 ${totalPayment.toFixed(2)} 元，将支付到您的支付宝账号：${alipay}`;
-
-  console.log("完整活动日志：", activityLog);
-});
-```
