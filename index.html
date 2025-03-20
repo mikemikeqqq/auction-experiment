@@ -793,12 +793,10 @@
 <script>
   /********** 全局变量及活动监测 **********/
   let participantId = "P" + Math.floor(1000 + Math.random() * 9000);
-  // 将这个变量改名以避免冲突
-  let pageTimeTracking = {}; 
+  let pageTimes = {};
   let currentPage = null;
   let startTime = null;
   let previewGroup = null; // 添加预览组别变量
-  
   // 活动日志记录
   let activityLog = {
     bidHistoryFormal: [],
@@ -815,7 +813,7 @@
   function enterPage(pageId) {
     if (currentPage) {
       let endTime = new Date();
-      pageTimeTracking[currentPage] = ((endTime - startTime) / 1000).toFixed(1);
+      pageTimes[currentPage] = ((endTime - startTime) / 1000).toFixed(1);
     }
     currentPage = pageId;
     startTime = new Date();
@@ -842,8 +840,8 @@
   }
   
   window.addEventListener("beforeunload", function () {
-    pageTimeTracking[currentPage] = ((new Date() - startTime) / 1000).toFixed(1);
-    console.log("页面停留时间记录：", pageTimeTracking);
+    pageTimes[currentPage] = ((new Date() - startTime) / 1000).toFixed(1);
+    console.log("页面停留时间记录：", pageTimes);
   });
   
   /********** 页面1-1：实验介绍前三部分 **********/
@@ -1576,7 +1574,7 @@
         alert("支付宝账号不能为空，请输入您的支付宝账号。");
         return;
       }
-     
+      
       // 显示确认区域
       document.getElementById("displayAlipay").textContent = alipay;
       document.getElementById("alipayInputArea").style.display = "none";
@@ -1584,77 +1582,29 @@
     });
     
     // 确认支付宝账号正确
-    document.getElementById("confirmAlipay").addEventListener("click", async function(){
+    document.getElementById("confirmAlipay").addEventListener("click", function(){
       const alipay = document.getElementById("displayAlipay").textContent;
       activityLog.alipay = alipay;
       
       // 计算总收益用于显示
       let totalPayment = 0;
       if (activityLog.finalWinner) {
-          totalPayment = activityLog.lotteryBonus + 50;
+        totalPayment = activityLog.lotteryBonus + 50;
       } else {
-          let auctionCashReward = 0;
-          if (activityLog.auctionProfit !== 0) {
-              auctionCashReward = (activityLog.auctionProfit / 10000 * 5);
-          }
-          totalPayment = activityLog.lotteryBonus + auctionCashReward;
+        let auctionCashReward = 0;
+        if (activityLog.auctionProfit !== 0) {
+          auctionCashReward = (activityLog.auctionProfit / 10000 * 5);
+        }
+        totalPayment = activityLog.lotteryBonus + auctionCashReward;
       }
       
-      // 准备要发送的数据
-      const participantData = {
-         participantId: participantId,
-          group: localStorage.getItem('group'),
-          uniqueCode: localStorage.getItem('uniqueCode'),
-          pageTimes: pageTimeTracking,
-         bidHistory: {
-              simulation: activityLog.bidHistorySim,
-              formal: activityLog.bidHistoryFormal
-         },
-          surveyResponses: activityLog.surveyResponses,
-          riskResponses: activityLog.riskResponses,
-          immediatePurchase: activityLog.immediatePurchase,
-          finalWinner: activityLog.finalWinner,
-          auctionProfit: activityLog.auctionProfit,
-          lotteryBonus: activityLog.lotteryBonus,
-         alipay: alipay
-       };
-       
-      try {
-          // 发送数据到服务器 - 修改为Vercel部署的地址
-          const response = await fetch('https://auction-experiment.vercel.app/api/participants', {
-              method: 'POST',
-             headers: {
-                      'Content-Type': 'application/json'
-             },
-              body: JSON.stringify(participantData)
-          });
-  
-          if (!response.ok) {
-              throw new Error('数据保存失败');
-          }
-  
-          // 跳转到最终感谢页面并显示信息
-          showPage('page11');
-          document.getElementById("finalPaymentMsgPage11").textContent = `您的总收益为 ${totalPayment.toFixed(2)} 元，将支付到您的支付宝账号：${alipay}`;
-          
-          console.log("完整活动日志：", activityLog);
-      } catch (error) {
-          console.error('保存数据时出错：', error);
-          alert('保存数据时出现错误，但不会影响您的实验参与。');
-          // 即使保存失败也继续显示结果页面
-          showPage('page11');
-          document.getElementById("finalPaymentMsgPage11").textContent = `您的总收益为 ${totalPayment.toFixed(2)} 元，将支付到您的支付宝账号：${alipay}`;
-          
-          // 保存到本地存储作为备份
-          try {
-            localStorage.setItem('auction_experiment_data_backup', JSON.stringify(participantData));
-            console.log('数据已备份到本地存储');
-          } catch (storageError) {
-            console.error('备份到本地存储失败:', storageError);
-          }
-      }
-     });
-     
+      // 跳转到最终感谢页面并显示信息
+      showPage('page11');
+      document.getElementById("finalPaymentMsgPage11").textContent = `您的总收益为 ${totalPayment.toFixed(2)} 元，将支付到您的支付宝账号：${alipay}`;
+      
+      console.log("完整活动日志：", activityLog);
+    });
+    
     // 重新编辑支付宝账号
     document.getElementById("editAlipay").addEventListener("click", function(){
       document.getElementById("alipayConfirmArea").style.display = "none";
@@ -1721,252 +1671,115 @@
   }
 
   // 小预览窗口的图片切换函数
-  let imageIndexTracking = {};  // 重命名变量避免冲突
+  let miniImageIndexes = {};
   
   function prevImageMini(contentId) {
-    if (!imageIndexTracking[contentId]) {
-      imageIndexTracking[contentId] = 0;
+    if (!miniImageIndexes[contentId]) {
+      miniImageIndexes[contentId] = 0;
     }
-    if (imageIndexTracking[contentId] > 0) {
-      imageIndexTracking[contentId]--;
-      document.getElementById(`${contentId}_img`).src = images[imageIndexTracking[contentId]];
-      // 记录图片查看行为
-      if (window.userLogger) {
-        window.userLogger.recordImageView(imageIndexTracking[contentId]);
-      }
+    if (miniImageIndexes[contentId] > 0) {
+      miniImageIndexes[contentId]--;
+      document.getElementById(`${contentId}_img`).src = images[miniImageIndexes[contentId]];
     }
   }
   
   function nextImageMini(contentId) {
-    if (!imageIndexTracking[contentId]) {
-      imageIndexTracking[contentId] = 0;
+    if (!miniImageIndexes[contentId]) {
+      miniImageIndexes[contentId] = 0;
     }
-    if (imageIndexTracking[contentId] < images.length - 1) {
-      imageIndexTracking[contentId]++;
-      document.getElementById(`${contentId}_img`).src = images[imageIndexTracking[contentId]];
-      // 记录图片查看行为
-      if (window.userLogger) {
-        window.userLogger.recordImageView(imageIndexTracking[contentId]);
-      }
-    }
-  }
-
-  // 修改submitBid函数
-  function submitBid() {
-    const bidAmount = parseFloat(document.getElementById('bidAmount').value);
-    // 记录出价行为到Supabase
-    recordBid(bidAmount);
-    
-    // 原有出价处理逻辑保持不变...
-    // ...
-  }
-
-  // 删除从这里到文件末尾的所有重复定义的函数和变量，
-  // 直接添加Supabase相关代码
-
-  // Supabase配置和用户行为记录代码
-  const SUPABASE_URL = 'https://bhsvdkdslhvoqbzofqve.supabase.co';
-  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJoc3Zka2RzbGh2b3Fiem9mcXZlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI1MTA0NDcsImV4cCI6MjA1ODA4NjQ0N30.Qsi7rEk4k1cU-Atu108OwUfenJLJ78B2jV2pGa5eDyQ';
-  
-  // 用户行为记录初始化
-  const userId = localStorage.getItem('userId') || ('user_' + Date.now().toString(36) + Math.random().toString(36).substring(2));
-  const sessionId = Date.now().toString(36) + Math.random().toString(36).substring(2);
-  const userGroup = localStorage.getItem('group') || '未分组';
-  let pageEnterTime = new Date();
-  let pageTimes = {};
-  let bidHistory = [];
-  let maxBid = 0;
-  
-  if (!localStorage.getItem('userId')) {
-    localStorage.setItem('userId', userId);
-  }
-  
-  // 页面加载时记录页面访问
-  window.addEventListener('load', function() {
-    recordPageView();
-  });
-  
-  // 页面关闭时记录页面停留时间
-  window.addEventListener('beforeunload', function() {
-    recordPageExit();
-  });
-  
-  // 更新已有的函数，修改为使用recordVRView和recordImageView
-  function showContent(contentId, contentType) {
-    const contentElement = document.getElementById(contentId);
-    let previewGroup = contentType;
-    
-    if (localStorage.getItem('group')) {
-      previewGroup = localStorage.getItem('group');
-    }
-    
-    if (previewGroup === 'VR') {
-      // VR预览
-      const timestamp = new Date().getTime();
-      contentElement.innerHTML = `
-        <iframe 
-          src="https://m.dcdapp.com/motor/inapp/pano-new/inner.html?series_id=4960&t=${timestamp}" 
-          style="width: 100%; height: 100%; border: none;"
-          allowfullscreen>
-        </iframe>
-      `;
-      // 记录VR查看行为
-      recordVRView();
-    } else {
-      // 图片预览
-      contentElement.innerHTML = `
-        <div class="image-slider-mini" style="height: 100%; position: relative;">
-          <button class="arrow-mini left-mini" onclick="prevImageMini('${contentId}')" style="position: absolute; left: 5px; top: 50%; transform: translateY(-50%); z-index: 10; background: rgba(0,0,0,0.5); color: white; border: none; padding: 8px; cursor: pointer; border-radius: 50%;">&#10094;</button>
-          <img id="${contentId}_img" src="${images[0]}" alt="Car Preview" style="width: 100%; height: 100%; object-fit: cover;">
-          <button class="arrow-mini right-mini" onclick="nextImageMini('${contentId}')" style="position: absolute; right: 5px; top: 50%; transform: translateY(-50%); z-index: 10; background: rgba(0,0,0,0.5); color: white; border: none; padding: 8px; cursor: pointer; border-radius: 50%;">&#10095;</button>
-        </div>
-      `;
-      // 记录初始图片查看
-      recordImageView(0);
-    }
-  }
-  
-  // 图片切换函数
-  let imageIndexes = {};
-  
-  function prevImageMini(contentId) {
-    if (!imageIndexes[contentId]) {
-      imageIndexes[contentId] = 0;
-    }
-    if (imageIndexes[contentId] > 0) {
-      imageIndexes[contentId]--;
-      document.getElementById(`${contentId}_img`).src = images[imageIndexes[contentId]];
-      // 记录图片查看行为
-      recordImageView(imageIndexes[contentId]);
-    }
-  }
-  
-  function nextImageMini(contentId) {
-    if (!imageIndexes[contentId]) {
-      imageIndexes[contentId] = 0;
-    }
-    if (imageIndexes[contentId] < images.length - 1) {
-      imageIndexes[contentId]++;
-      document.getElementById(`${contentId}_img`).src = images[imageIndexes[contentId]];
-      // 记录图片查看行为
-      recordImageView(imageIndexes[contentId]);
-    }
-  }
-  
-  // 记录页面访问
-  function recordPageView() {
-    const pageName = window.location.pathname;
-    pageEnterTime = new Date();
-    
-    if (!pageTimes[pageName]) {
-      pageTimes[pageName] = {
-        visits: 0,
-        totalTime: 0
-      };
-    }
-    
-    pageTimes[pageName].visits++;
-    
-    // 发送数据到Supabase
-    syncDataToSupabase();
-  }
-  
-  // 记录页面离开
-  function recordPageExit() {
-    const pageName = window.location.pathname;
-    const timeSpent = (new Date() - pageEnterTime) / 1000; // 秒
-    
-    if (pageTimes[pageName]) {
-      pageTimes[pageName].totalTime += timeSpent;
-    }
-    
-    // 发送数据到Supabase
-    syncDataToSupabase();
-  }
-  
-  // 记录VR查看
-  function recordVRView() {
-    if (!pageTimes['vr_view']) {
-      pageTimes['vr_view'] = {
-        visits: 0,
-        totalTime: 0
-      };
-    }
-    
-    pageTimes['vr_view'].visits++;
-    
-    // 发送数据到Supabase
-    syncDataToSupabase();
-  }
-  
-  // 记录图片查看
-  function recordImageView(imageIndex) {
-    const imagePage = `image_${imageIndex}`;
-    
-    if (!pageTimes[imagePage]) {
-      pageTimes[imagePage] = {
-        visits: 0,
-        totalTime: 0
-      };
-    }
-    
-    pageTimes[imagePage].visits++;
-    
-    // 发送数据到Supabase
-    syncDataToSupabase();
-  }
-  
-  // 记录出价
-  function recordBid(amount) {
-    if (isNaN(amount)) return;
-    
-    const bidData = {
-      amount: amount,
-      timestamp: new Date().toISOString()
-    };
-    
-    bidHistory.push(bidData);
-    maxBid = Math.max(maxBid, amount);
-    
-    // 发送数据到Supabase
-    syncDataToSupabase();
-  }
-  
-  // 同步数据到Supabase
-  async function syncDataToSupabase() {
-    try {
-      const userData = {
-        participant_id: userId,
-        group: userGroup,
-        unique_code: sessionId,
-        page_times: pageTimes,
-        bid_history: bidHistory,
-        immediate_purchase: false,
-        final_winner: false,
-        auction_profit: maxBid
-      };
-      
-      // 使用upsert方法更新或插入数据
-      const response = await fetch(`${SUPABASE_URL}/rest/v1/participants`, {
-        method: 'POST',
-        headers: {
-          'apikey': SUPABASE_KEY,
-          'Authorization': `Bearer ${SUPABASE_KEY}`,
-          'Content-Type': 'application/json',
-          'Prefer': 'resolution=merge-duplicates,return=representation'
-        },
-        body: JSON.stringify(userData)
-      });
-      
-      if (response.ok) {
-        console.log('用户行为数据已同步到Supabase');
-      } else {
-        console.error('数据同步失败:', await response.text());
-      }
-    } catch (error) {
-      console.error('数据同步错误:', error);
+    if (miniImageIndexes[contentId] < images.length - 1) {
+      miniImageIndexes[contentId]++;
+      document.getElementById(`${contentId}_img`).src = images[miniImageIndexes[contentId]];
     }
   }
 </script>
 </body>
 </html>
+
+```javascript
+// 完整的Supabase数据提交函数
+async function submitDataToSupabase(participantData) {
+    const supabaseUrl = 'https://bhsvdkdslhvoqbzofqve.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJoc3Zka2RzbGh2b3Fiem9mcXZlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI1MTA0NDcsImV4cCI6MjA1ODA4NjQ0N30.Qsi7rEk4k1cU-Atu108OwUfenJLJ78B2jV2pGa5eDyQ';
+
+    try {
+        const response = await fetch(`${supabaseUrl}/rest/v1/participants`, {
+            method: 'POST',
+            headers: {
+                'apikey': supabaseKey,
+                'Authorization': `Bearer ${supabaseKey}`,
+                'Content-Type': 'application/json',
+                'Prefer': 'return=representation'
+            },
+            body: JSON.stringify({
+                participant_id: participantData.participantId,
+                group: participantData.group,
+                unique_code: participantData.uniqueCode,
+                page_times: participantData.pageTimes,
+                bid_history: participantData.bidHistory,
+                survey_responses: participantData.surveyResponses,
+                risk_responses: participantData.riskResponses,
+                immediate_purchase: participantData.immediatePurchase,
+                final_winner: participantData.finalWinner,
+                auction_profit: participantData.auctionProfit,
+                lottery_bonus: participantData.lotteryBonus,
+                alipay: participantData.alipay
+            })
+        });
+
+        if (response.ok) {
+            alert('数据已成功提交到Supabase！');
+        } else {
+            alert('数据提交失败，请稍后重试。');
+            console.error(await response.text());
+            localStorage.setItem('auction_experiment_data_backup', JSON.stringify(participantData));
+        }
+    } catch (error) {
+        console.error('提交数据时出现异常：', error);
+        localStorage.setItem('auction_experiment_data_backup', JSON.stringify(participantData));
+        alert('提交数据时出现错误，已在本地备份数据。');
+    }
+}
+
+// 在你现有的“confirmAlipay”按钮事件处理代码里调用上述函数：
+document.getElementById("confirmAlipay").addEventListener("click", async function(){
+  const alipay = document.getElementById("displayAlipay").textContent;
+  activityLog.alipay = alipay;
+
+  let totalPayment = 0;
+  if (activityLog.finalWinner) {
+      totalPayment = activityLog.lotteryBonus + 50;
+  } else {
+      let auctionCashReward = 0;
+      if (activityLog.auctionProfit !== 0) {
+          auctionCashReward = (activityLog.auctionProfit / 10000 * 5);
+      }
+      totalPayment = activityLog.lotteryBonus + auctionCashReward;
+  }
+
+  const participantData = {
+    participantId: participantId,
+    group: localStorage.getItem('group'),
+    uniqueCode: localStorage.getItem('uniqueCode'),
+    pageTimes: pageTimes,
+    bidHistory: {
+      simulation: activityLog.bidHistorySim,
+      formal: activityLog.bidHistoryFormal
+    },
+    surveyResponses: activityLog.surveyResponses,
+    riskResponses: activityLog.riskResponses,
+    immediatePurchase: activityLog.immediatePurchase,
+    finalWinner: activityLog.finalWinner,
+    auctionProfit: activityLog.auctionProfit,
+    lotteryBonus: activityLog.lotteryBonus,
+    alipay: alipay
+  };
+
+  await submitDataToSupabase(participantData);
+
+  showPage('page11');
+  document.getElementById("finalPaymentMsgPage11").textContent = `您的总收益为 ${totalPayment.toFixed(2)} 元，将支付到您的支付宝账号：${alipay}`;
+
+  console.log("完整活动日志：", activityLog);
+});
+```
