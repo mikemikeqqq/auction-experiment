@@ -1583,8 +1583,46 @@
     
     // 确认支付宝账号正确
     document.getElementById("confirmAlipay").addEventListener("click", async function(){
-      const alipay = document.getElementById("displayAlipay").textContent;
-      activityLog.alipay = alipay;
+  const alipay = document.getElementById("displayAlipay").textContent;
+  activityLog.alipay = alipay;
+
+  let totalPayment = 0;
+  if (activityLog.finalWinner) {
+      totalPayment = activityLog.lotteryBonus + 50;
+  } else {
+      let auctionCashReward = 0;
+      if (activityLog.auctionProfit !== 0) {
+          auctionCashReward = (activityLog.auctionProfit / 10000 * 5);
+      }
+      totalPayment = activityLog.lotteryBonus + auctionCashReward;
+  }
+
+  const participantData = {
+    participantId: participantId,
+    group: localStorage.getItem('group'),
+    uniqueCode: localStorage.getItem('uniqueCode'),
+    pageTimes: pageTimes,
+    bidHistory: {
+      simulation: activityLog.bidHistorySim,
+      formal: activityLog.bidHistoryFormal
+    },
+    surveyResponses: activityLog.surveyResponses,
+    riskResponses: activityLog.riskResponses,
+    immediatePurchase: activityLog.immediatePurchase,
+    finalWinner: activityLog.finalWinner,
+    auctionProfit: activityLog.auctionProfit,
+    lotteryBonus: activityLog.lotteryBonus,
+    alipay: alipay
+  };
+
+  // 提交到Supabase（调用新的函数）
+  await submitDataToSupabase(participantData);
+
+  showPage('page11');
+  document.getElementById("finalPaymentMsgPage11").textContent = `您的总收益为 ${totalPayment.toFixed(2)} 元，将支付到您的支付宝账号：${alipay}`;
+
+  console.log("完整活动日志：", activityLog);
+});
       
       // 计算总收益用于显示
       let totalPayment = 0;
@@ -1619,17 +1657,50 @@
        
       try {
           // 发送数据到服务器 - 修改为Vercel部署的地址
-          const response = await fetch('https://auction-experiment.vercel.app/api/participants', {
-              method: 'POST',
-             headers: {
-                      'Content-Type': 'application/json'
-             },
-              body: JSON.stringify(participantData)
-          });
-  
-          if (!response.ok) {
-              throw new Error('数据保存失败');
-          }
+// 数据提交到Supabase的函数（完整替换版）
+async function submitDataToSupabase(participantData) {
+  const supabaseUrl = 'https://bhsvdkdslhvoqbzofqve.supabase.co';
+  const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJoc3Zka2RzbGh2b3Fiem9mcXZlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI1MTA0NDcsImV4cCI6MjA1ODA4NjQ0N30.Qsi7rEk4k1cU-Atu108OwUfenJLJ78B2jV2pGa5eDyQ';
+
+  try {
+    const response = await fetch(`${supabaseUrl}/rest/v1/participants`, {
+      method: 'POST',
+      headers: {
+        'apikey': supabaseKey,
+        'Authorization': `Bearer ${supabaseKey}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation'
+      },
+      body: JSON.stringify({
+        participant_id: participantData.participantId,
+        group: participantData.group,
+        unique_code: participantData.uniqueCode,
+        page_times: participantData.pageTimes,
+        bid_history: participantData.bidHistory,
+        survey_responses: participantData.surveyResponses,
+        risk_responses: participantData.riskResponses,
+        immediate_purchase: participantData.immediatePurchase,
+        final_winner: participantData.finalWinner,
+        auction_profit: participantData.auctionProfit,
+        lottery_bonus: participantData.lotteryBonus,
+        alipay: participantData.alipay
+      })
+    });
+
+    if (response.ok) {
+      alert('数据已成功提交到Supabase！');
+    } else {
+      alert('数据提交失败，请稍后重试。');
+      console.error(await response.text());
+      localStorage.setItem('auction_experiment_data_backup', JSON.stringify(participantData));
+    }
+  } catch (error) {
+    console.error('提交数据时出现异常：', error);
+    localStorage.setItem('auction_experiment_data_backup', JSON.stringify(participantData));
+    alert('提交数据时出现错误，已在本地备份数据。');
+  }
+}
+
   
           // 跳转到最终感谢页面并显示信息
           showPage('page11');
