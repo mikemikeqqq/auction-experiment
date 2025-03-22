@@ -264,18 +264,21 @@
     <strong>您的最终收益 = 车辆的真实市场价值 - 您的最终出价</strong>
   </p>
   <p>
-    <strong>奖励兑换：</strong> 10,000 MU = 5 RMB
+    <strong>奖励兑换：</strong> 10,000 MU = 5 RMB<br>
+    <strong>温馨提示：</strong> 最终出价是指您在拍卖过程中出价的最高价格。换句话说，即使您没有竞拍成功，您仍然可以按照最终出价获得竞拍奖励。
   </p>
   <p>
     <strong>示例：</strong><br>
-    - 假设您的最终出价为 <strong>240,000 MU</strong>，车辆真实市场价值为 <strong>250,000 MU</strong>，则您的最终收益计算如下：<br>
+    - 假设您的最终出价为 <strong>240,000 MU</strong>，车辆真实市场价值为 <strong>250,000 MU</strong>，不管您是否成功拍下该拍品，您的最终收益计算如下：<br>
     - 250,000 - 240,000 = 10,000 MU<br>
     - 您最终获得 5 RMB 现金奖励。
   </p>
   <p>
     <strong>特别注意：</strong><br>
     - 请您按照您的评估进行出价，并完成整个实验流程和后续的问卷调查。<br>
-    - 实验结束后，系统将自动计算您的总收益，并按兑换率支付现金奖励。
+    - 实验结束后，系统将自动计算您的总收益，并按兑换率支付现金奖励。<br>
+    - 请根据您对拍品价值的判断，合理出价，不要盲目出价，<br>
+
   </p>
   
   <hr>
@@ -340,7 +343,7 @@
             <p>最小加价：5,000 MU</p>
           </div>
           <div class="bid-info">
-            <p>当前最高出价：<span id="currentBid_sim">135,000</span> MU</p>
+            <p>当前最高出价：<span id="currentBid_sim">无</span></p>
             <p>最高出价者：<span id="highestBidder_sim">无</span></p>
             <p>您的出价：<input type="number" id="userBid_sim" step="5000" min="140000" max="500000" value="140000"> MU</p>
             <button id="placeBid_sim">出价</button>
@@ -389,7 +392,7 @@
             <p>最小加价：5,000 MU</p>
           </div>
           <div class="bid-info">
-            <p>当前最高出价：<span id="currentBid_formal">140,000</span> MU</p>
+            <p>当前最高出价：<span id="currentBid_formal">无</span></p>
             <p>最高出价者：<span id="highestBidder_formal">无</span></p>
             <p>您的出价：<input type="number" id="userBid_formal" step="5000" min="140000" max="500000" value="140000"> MU</p>
             <button id="placeBid_formal">出价</button>
@@ -679,7 +682,7 @@
   
 <!-- ========== 问卷 第5页 (page9) ========== -->
 <div id="page9" class="container page">
-  <h1>问卷调查（第5页）</h1>
+  <h1>问卷调查（第5页-上）</h1>
   <form id="surveyPage5">
     <div class="question">
       <p>18. 您之前是否参与过在线拍卖？(是或否）</p>
@@ -734,9 +737,55 @@
       </div>
     </div>
     <div class="button-group">
-      <button type="submit">提交问卷</button>
+      <button type="submit">下一页</button>
     </div>
     <span id="surveyPage5Error" class="error"></span>
+  </form>
+</div>
+  
+<!-- ========== 问卷 第5页(下) (page9_2) ========== -->
+<div id="page9_2" class="container page">
+  <h1>问卷调查（第5页-下）</h1>
+  <form id="surveyPage5_2">
+    <div class="question" id="q23">
+      <p>23. 您的性别是：</p>
+      <label><input type="radio" name="q23" value="男" required> 男</label>
+      <label><input type="radio" name="q23" value="女"> 女</label>
+      <label><input type="radio" name="q23" value="其他"> 其他</label>
+    </div>
+    <div class="question" id="q24">
+      <p>24. 您的教育背景是：</p>
+      <label><input type="radio" name="q24" value="初中及以下" required> 初中及以下</label>
+      <label><input type="radio" name="q24" value="高中"> 高中</label>
+      <label><input type="radio" name="q24" value="大学本科"> 大学本科</label>
+      <label><input type="radio" name="q24" value="硕士研究生"> 硕士研究生</label>
+      <label><input type="radio" name="q24" value="博士"> 博士</label>
+    </div>
+    <div class="question" id="q25">
+      <p>25. 您的个人年收入大致是：</p>
+      <label><input type="radio" name="q25" value="10万以下" required> 10万以下</label>
+      <label><input type="radio" name="q25" value="10-20万"> 10-20万</label>
+      <label><input type="radio" name="q25" value="20-30万"> 20-30万</label>
+      <label><input type="radio" name="q25" value="30-40万"> 30-40万</label>
+      <label><input type="radio" name="q25" value="40-50万"> 40-50万</label>
+      <label><input type="radio" name="q25" value="50万以上"> 50万以上</label>
+    </div>
+    <div class="question" id="q26">
+      <p>26. 您的年龄是：</p>
+      <input type="number" name="q26" min="10" max="99" required placeholder="请输入两位整数">
+    </div>
+    <div class="question" id="q27">
+      <p>27. 您目前的工作状态是：</p>
+      <label><input type="radio" name="q27" value="全职" required> 全职</label>
+      <label><input type="radio" name="q27" value="兼职"> 兼职</label>
+      <label><input type="radio" name="q27" value="个体经营"> 个体经营</label>
+      <label><input type="radio" name="q27" value="学生"> 学生</label>
+      <label><input type="radio" name="q27" value="无业"> 无业</label>
+    </div>
+    <div class="button-group">
+      <button type="submit">提交问卷</button>
+    </div>
+    <span id="surveyPage5_2Error" class="error"></span>
   </form>
 </div>
   
@@ -1455,18 +1504,65 @@
   // page9
   document.getElementById("surveyPage5").addEventListener("submit", function(e){
     e.preventDefault();
+    
+    // 表单验证
     if (!document.querySelector('input[name="q18"]:checked') ||
         !document.querySelector('input[name="q19"]:checked') ||
         !document.querySelector('input[name="q20"]:checked') ||
-        !document.querySelector('select[name="q21"]').value) {
+        !document.querySelector('select[name="q21"]').value ||
+        !document.querySelector('input[name="q22"]:checked')) {
       document.getElementById("surveyPage5Error").textContent = "请回答所有必答题目。";
       return;
     }
-    let formData = new FormData(e.target);
+    
+    // 获取表单数据
+    const formData = new FormData(e.target);
     formData.forEach((value, key) => {
       activityLog.surveyResponses[key] = value;
     });
+    
+    // 记录用户选择
+    localStorage.setItem('activityLog', JSON.stringify(activityLog));
+    
+    // 跳转到下一页(第5页下半部分)
+    showPage('page9_2');
+  });
+  
+  // page9_2
+  document.getElementById("surveyPage5_2").addEventListener("submit", function(e){
+    e.preventDefault();
+    
+    // 表单验证
+    if (!document.querySelector('input[name="q23"]:checked') ||
+        !document.querySelector('input[name="q24"]:checked') ||
+        !document.querySelector('input[name="q25"]:checked') ||
+        !document.querySelector('input[name="q26"]').value ||
+        !document.querySelector('input[name="q27"]:checked')) {
+      document.getElementById("surveyPage5_2Error").textContent = "请回答所有必答题目。";
+      return;
+    }
+    
+    // 获取表单数据
+    const formData = new FormData(e.target);
+    formData.forEach((value, key) => {
+      activityLog.surveyResponses[key] = value;
+    });
+    
+    // 记录用户选择
+    localStorage.setItem('activityLog', JSON.stringify(activityLog));
+    
+    // 跳转到下一页
     showPage('page10');
+    
+    // 初始化彩票测试
+    if(typeof loadRiskQuestion === 'function') {
+      loadRiskQuestion(0); // 加载第一个风险问题
+      
+      // 更新进度显示
+      if(document.getElementById('riskProgress')) {
+        document.getElementById('riskProgress').textContent = '1/10';
+      }
+    }
   });
   
   /********** 页面10：风险偏好彩票测试与收益汇总 **********/
@@ -2072,7 +2168,7 @@
         }
         totalPayment = activityLog.lotteryBonus + auctionCashReward;
       }
-
+      
       // 尝试使用简单方法提交数据
       const success = await simpleDataSubmit();
       
