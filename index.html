@@ -797,6 +797,8 @@
   let currentPage = null;
   let startTime = null;
   let previewGroup = null; // 添加预览组别变量
+  // 添加实验开始时间
+  let experimentStartTime = new Date();
   // 活动日志记录
   let activityLog = {
     bidHistoryFormal: [],
@@ -1713,6 +1715,9 @@
       now.setMilliseconds(0);
       const submissionTimeISO = now.toISOString();
       
+      // 计算实验持续时间（秒）
+      const durationTime = Math.floor((now - experimentStartTime) / 1000);
+      
       // 获取IP地址的国家
       let country = "未知";
       try {
@@ -1764,7 +1769,9 @@
           // 添加国家字段
           country: country,
           // 添加操作系统字段
-          operating_system: operatingSystem
+          operating_system: operatingSystem,
+          // 添加实验持续时间（秒）
+          duration_time: durationTime
         })
       });
       
@@ -1829,7 +1836,9 @@
         final_winner: !!activityLog.finalWinner,
         auction_profit: activityLog.auctionProfit || 0,
         lottery_bonus: activityLog.lotteryBonus || 0,
-        alipay: alipay
+        alipay: alipay,
+        // 添加实验持续时间（单位：秒）
+        duration_time: Math.floor((new Date() - experimentStartTime) / 1000)
       };
       
       // 同时使用两种方式保存数据
@@ -1943,7 +1952,8 @@
           finalWinner: activityLog.finalWinner,
           auctionProfit: activityLog.auctionProfit,
           lotteryBonus: activityLog.lotteryBonus,
-          alipay: activityLog.alipay || ''
+          alipay: activityLog.alipay || '',
+          duration_time: Math.floor((new Date() - experimentStartTime) / 1000)
         })
       };
 
@@ -1997,6 +2007,14 @@
     titleDiv.textContent = '实验完成';
     titleDiv.style.textAlign = 'center';
     dataDiv.appendChild(titleDiv);
+    
+    // 显示实验持续时间
+    const durationDiv = document.createElement('p');
+    const durationTime = data.duration_time || Math.floor((new Date() - experimentStartTime) / 1000);
+    durationDiv.textContent = `实验总持续时间：${durationTime} 秒（${Math.floor(durationTime/60)}分${durationTime%60}秒）`;
+    durationDiv.style.textAlign = 'center';
+    durationDiv.style.fontWeight = 'bold';
+    dataDiv.appendChild(durationDiv);
 
     // 添加数据文本区域
     const textArea = document.createElement('textarea');
