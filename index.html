@@ -1713,6 +1713,18 @@
       now.setMilliseconds(0);
       const submissionTimeISO = now.toISOString();
       
+      // 获取IP地址的国家
+      let country = "未知";
+      try {
+        const ipResponse = await fetch('https://ipapi.co/json/');
+        if (ipResponse.ok) {
+          const ipData = await ipResponse.json();
+          country = ipData.country_name || "未知";
+        }
+      } catch (ipError) {
+        console.error('获取IP国家信息失败:', ipError);
+      }
+      
       // 注意：正确的表名是participant（单数），不是participants（复数）
       const response = await fetch(`${SUPABASE_URL}/rest/v1/participant`, {
         method: 'POST',
@@ -1739,7 +1751,9 @@
           lottery_bonus: participantData.lottery_bonus !== undefined ? participantData.lottery_bonus : activityLog.lotteryBonus || 0,
           alipay: participantData.alipay || activityLog.alipay || '',
           // 添加提交时间字段
-          submission_time: submissionTimeISO
+          submission_time: submissionTimeISO,
+          // 添加国家字段
+          country: country
         })
       });
       
