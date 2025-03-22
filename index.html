@@ -309,7 +309,7 @@
   <p>请您花费至少一分钟仔细预览该款汽车，倒计时结束后进入模拟竞拍环节。</p>
   <div id="previewArea"></div>
   <div class="code" id="uniqueCode"></div>
-  <p>请等待预览时间结束： <span id="countdownTimer">10</span> 秒</p>
+  <p>请等待预览时间结束： <span id="countdownTimer">60</span> 秒</p>
   <div class="button-group">
     <button id="nextButtonPage2" disabled>下一步</button>
   </div>
@@ -319,7 +319,7 @@
 <div id="page3" class="container page">
   <div style="display: flex; gap: 20px; margin-top: 20px;">
     <!-- 左侧预览区域 -->
-    <div style="width: 300px; height: 300px; border: 1px solid #ccc; border-radius: 8px; overflow: hidden; margin-top: 140px;">
+    <div style="width: 360px; height: 360px; border: 1px solid #ccc; border-radius: 8px; overflow: hidden; margin-top: 140px;">
       <div style="padding: 8px; background: #f5f5f5; border-bottom: 1px solid #ccc;">
         <span>车辆预览</span>
       </div>
@@ -369,7 +369,7 @@
 <div id="page4" class="container page">
   <div style="display: flex; gap: 20px; margin-top: 20px;">
     <!-- 左侧预览区域 -->
-    <div style="width: 300px; height: 300px; border: 1px solid #ccc; border-radius: 8px; overflow: hidden; margin-top: 140px;">
+    <div style="width: 360px; height: 360px; border: 1px solid #ccc; border-radius: 8px; overflow: hidden; margin-top: 140px;">
       <div style="padding: 8px; background: #f5f5f5; border-bottom: 1px solid #ccc;">
         <span>车辆预览</span>
       </div>
@@ -718,7 +718,7 @@
         <option value="2. 黑色">2. 黑色</option>
         <option value="3. 红色">3. 红色</option>
         <option value="4. 蓝色">4. 蓝色</option>
-        <option value="5. 灰色">5. 灰色</option>
+        <option value="5. 橙色">5. 橙色</option>
       </select>
     </div>
     <div class="question" id="q22">
@@ -955,7 +955,7 @@
   })();
   
   // 定义预览页面的全局变量和计时器
-  var previewCountdown = 10;
+  var previewCountdown = 60;
   var previewTimerInterval;
   var nextButtonPage2 = document.getElementById("nextButtonPage2");
   
@@ -1470,16 +1470,16 @@
   /********** 页面10：风险偏好彩票测试与收益汇总 **********/
   (function(){
     const riskTestData = [
-      { choice: 1, A: {desc:"90% 机会赢得10元，10% 机会赢得8元", prob:0.9, high:10, low:8},  B: {desc:"90% 机会赢得20元，10% 机会赢得2元", prob:0.9, high:20, low:2} },
-      { choice: 2, A: {desc:"80% 机会赢得10元，20% 机会赢得8元", prob:0.8, high:10, low:8},  B: {desc:"80% 机会赢得20元，20% 机会赢得2元", prob:0.8, high:20, low:2} },
-      { choice: 3, A: {desc:"70% 机会赢得10元，30% 机会赢得8元", prob:0.7, high:10, low:8},  B: {desc:"70% 机会赢得20元，30% 机会赢得2元", prob:0.7, high:20, low:2} },
-      { choice: 4, A: {desc:"60% 机会赢得10元，40% 机会赢得8元", prob:0.6, high:10, low:8},  B: {desc:"60% 机会赢得20元，40% 机会赢得2元", prob:0.6, high:20, low:2} },
-      { choice: 5, A: {desc:"50% 机会赢得10元，50% 机会赢得8元", prob:0.5, high:10, low:8},  B: {desc:"50% 机会赢得20元，50% 机会赢得2元", prob:0.5, high:20, low:2} },
-      { choice: 6, A: {desc:"40% 机会赢得10元，60% 机会赢得8元", prob:0.4, high:10, low:8},  B: {desc:"40% 机会赢得20元，60% 机会赢得2元", prob:0.4, high:20, low:2} },
-      { choice: 7, A: {desc:"30% 机会赢得10元，70% 机会赢得8元", prob:0.3, high:10, low:8},  B: {desc:"30% 机会赢得20元，70% 机会赢得2元", prob:0.3, high:20, low:2} },
-      { choice: 8, A: {desc:"20% 机会赢得10元，80% 机会赢得8元", prob:0.2, high:10, low:8},  B: {desc:"20% 机会赢得20元，80% 机会赢得2元", prob:0.2, high:20, low:2} },
-      { choice: 9, A: {desc:"10% 机会赢得10元，90% 机会赢得8元", prob:0.1, high:10, low:8},  B: {desc:"10% 机会赢得20元，90% 机会赢得2元", prob:0.1, high:20, low:2} },
-      { choice: 10,A: {desc:"100% 机会赢得9元",    prob:1.0, high:9, low:9},    B: {desc:"100% 机会赢得9元",    prob:1.0, high:9, low:9} }
+      { choice: 1, A: {desc:"10% 机会赢得10元，90% 机会赢得8元", prob:0.1, high:10, low:8},  B: {desc:"10% 机会赢得19.25元，90% 机会赢得0.5元", prob:0.1, high:19.25, low:0.5} },
+      { choice: 2, A: {desc:"20% 机会赢得10元，80% 机会赢得8元", prob:0.2, high:10, low:8},  B: {desc:"20% 机会赢得19.25元，80% 机会赢得0.5元", prob:0.2, high:19.25, low:0.5} },
+      { choice: 3, A: {desc:"30% 机会赢得10元，70% 机会赢得8元", prob:0.3, high:10, low:8},  B: {desc:"30% 机会赢得19.25元，70% 机会赢得0.5元", prob:0.3, high:19.25, low:0.5} },
+      { choice: 4, A: {desc:"40% 机会赢得10元，60% 机会赢得8元", prob:0.4, high:10, low:8},  B: {desc:"40% 机会赢得19.25元，60% 机会赢得0.5元", prob:0.4, high:19.25, low:0.5} },
+      { choice: 5, A: {desc:"50% 机会赢得10元，50% 机会赢得8元", prob:0.5, high:10, low:8},  B: {desc:"50% 机会赢得19.25元，50% 机会赢得0.5元", prob:0.5, high:19.25, low:0.5} },
+      { choice: 6, A: {desc:"60% 机会赢得10元，40% 机会赢得8元", prob:0.6, high:10, low:8},  B: {desc:"60% 机会赢得19.25元，40% 机会赢得0.5元", prob:0.6, high:19.25, low:0.5} },
+      { choice: 7, A: {desc:"70% 机会赢得10元，30% 机会赢得8元", prob:0.7, high:10, low:8},  B: {desc:"70% 机会赢得19.25元，30% 机会赢得0.5元", prob:0.7, high:19.25, low:0.5} },
+      { choice: 8, A: {desc:"80% 机会赢得10元，20% 机会赢得8元", prob:0.8, high:10, low:8},  B: {desc:"80% 机会赢得19.25元，20% 机会赢得0.5元", prob:0.8, high:19.25, low:0.5} },
+      { choice: 9, A: {desc:"90% 机会赢得10元，10% 机会赢得8元", prob:0.9, high:10, low:8},  B: {desc:"90% 机会赢得19.25元，10% 机会赢得0.5元", prob:0.9, high:19.25, low:0.5} },
+      { choice: 10,A: {desc:"100% 机会赢得10元", prob:1.0, high:10, low:10}, B: {desc:"100% 机会赢得19.25元", prob:1.0, high:19.25, low:19.25} }
     ];
     let currentRiskIndex = 0;
     let riskResponses = [];
@@ -1617,7 +1617,7 @@
   // 启动预览计时器的函数
   function startPreviewTimer() {
     // 重置计时器状态
-    previewCountdown = 10;
+    previewCountdown = 60;
     if (previewTimerInterval) {
       clearInterval(previewTimerInterval);
     }
@@ -1961,7 +1961,7 @@
 
     // 添加标题
     const titleDiv = document.createElement('h3');
-    titleDiv.textContent = '实验数据 (请复制并发送给实验员)';
+    titleDiv.textContent = '实验完成';
     titleDiv.style.textAlign = 'center';
     dataDiv.appendChild(titleDiv);
 
