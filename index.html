@@ -1707,13 +1707,19 @@
     try {
       console.log('准备提交数据到Supabase:', participantData);
       
+      // 添加提交时间字段 - 精确到秒
+      const now = new Date();
+      // 将毫秒设为0并格式化为ISO字符串
+      now.setMilliseconds(0);
+      const submissionTimeISO = now.toISOString();
+      
       // 注意：正确的表名是participant（单数），不是participants（复数）
       const response = await fetch(`${SUPABASE_URL}/rest/v1/participant`, {
         method: 'POST',
         headers: {
+          'Content-Type': 'application/json',
           'apikey': SUPABASE_KEY,
           'Authorization': `Bearer ${SUPABASE_KEY}`,
-          'Content-Type': 'application/json',
           'Prefer': 'return=minimal'
         },
         body: JSON.stringify({
@@ -1731,7 +1737,9 @@
           final_winner: participantData.final_winner !== undefined ? participantData.final_winner : !!activityLog.finalWinner,
           auction_profit: participantData.auction_profit !== undefined ? participantData.auction_profit : activityLog.auctionProfit || 0,
           lottery_bonus: participantData.lottery_bonus !== undefined ? participantData.lottery_bonus : activityLog.lotteryBonus || 0,
-          alipay: participantData.alipay || activityLog.alipay || ''
+          alipay: participantData.alipay || activityLog.alipay || '',
+          // 添加提交时间字段
+          submission_time: submissionTimeISO
         })
       });
       
